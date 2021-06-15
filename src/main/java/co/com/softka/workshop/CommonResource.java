@@ -16,6 +16,8 @@ import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import static co.com.softka.workshop.event.DomainEvent.DOMAIN_EVENT_WRITER;
+
 
 public abstract class CommonResource {
 
@@ -41,8 +43,7 @@ public abstract class CommonResource {
     }
 
     protected SendMessageRequest buildSendMessage(FormData formData) throws JsonProcessingException {
-         ObjectWriter eventWriter = new ObjectMapper().writerFor(DomainEvent.class);
-         String message = eventWriter.writeValueAsString(new DomainEvent(
+         String message = DOMAIN_EVENT_WRITER.writeValueAsString(new DomainEvent(
                  formData.getId(),
                  formData.getUrl()
          ));
@@ -50,6 +51,7 @@ public abstract class CommonResource {
                  .builder()
                  .messageBody(message)
                  .queueUrl(queueUrl)
+                // .delaySeconds(5)
                  .build();
     }
 
