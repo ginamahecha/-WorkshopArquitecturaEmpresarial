@@ -8,6 +8,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import javax.inject.Inject;
 import javax.ws.rs.POST;
@@ -24,6 +26,9 @@ public class DocumentResource extends CommonResource {
     @Inject
     private DynamoDbClient dynamoDB;
 
+    @Inject
+    private SqsClient sqs;
+
     @POST
     @Path("extract")
     public Response uploadFile(RequestData requestData) throws IOException {
@@ -35,15 +40,14 @@ public class DocumentResource extends CommonResource {
         formData.setId(UUID.randomUUID().toString());
         formData.setUrl(requestData.getUrl());
 
-        var requestS3 = buildPutRequest(formData);
         PutObjectResponse putS3Response = s3.putObject(
-                requestS3,
+                buildPutRequest(formData),
                 RequestBody.fromFile(uploadToTemp(formData.getData()))
         );
-        var requestDynamoDb = putRequest(formData);
-        PutItemResponse putDbResponse = dynamoDB.putItem(requestDynamoDb);
+        PutItemResponse putDbResponse = dynamoDB.putItem( putRequest(formData));
+        SendMessageResponse sendResponse = sqs.sendMessage(buildSendMessage(formData));
 
-        if (putS3Response != null && putDbResponse != null) {
+        if (putS3Response != null && putDbResponse != null && sendResponse != null) {
             return Response.ok(formData.getId())
                     .status(Response.Status.CREATED).build();
         } else {
