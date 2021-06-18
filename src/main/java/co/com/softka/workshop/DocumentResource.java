@@ -1,22 +1,24 @@
 package co.com.softka.workshop;
 
-import co.com.softka.workshop.data.FormData;
+import co.com.softka.workshop.data.FormDataRegister;
 import co.com.softka.workshop.data.RequestData;
+import co.com.softka.workshop.data.ResponseData;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jsoup.Jsoup;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import javax.inject.Inject;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.UUID;
+
+import static co.com.softka.workshop.Constants.DOCUMENT_KEY_COL;
+import static co.com.softka.workshop.Constants.DOCUMENT_METADATA_COL;
 
 @Path("/document")
 public class DocumentResource extends CommonResource {
@@ -31,25 +33,46 @@ public class DocumentResource extends CommonResource {
 
     @POST
     @Path("extract")
-    public Response uploadFile(RequestData requestData) throws IOException {
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response extract(RequestData requestData) throws IOException {
         var doc = Jsoup.connect(requestData.getUrl()).get();
-        var formData = new FormData();
+        var formData = new FormDataRegister();
 
         formData.setData(doc.outerHtml());
         formData.setMimeType("text/html");
         formData.setId(UUID.randomUUID().toString());
         formData.setUrl(requestData.getUrl());
+        formData.setSelector(requestData.getSelector());
 
-        PutObjectResponse putS3Response = s3.putObject(
+        return generateResponse(formData);
+    }
+
+    @GET
+    @Path("{key}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response get(@PathParam("key") String key) {
+        var item = dynamoDB.getItem(getRequest(key)).item();
+        ResponseData responseData = new ResponseData();
+        if (item != null && !item.isEmpty()) {
+            responseData.setId(item.get(DOCUMENT_KEY_COL).s());
+            responseData.setHtml(item.get(DOCUMENT_METADATA_COL).s());
+        }
+        return Response.ok(responseData).status(Response.Status.CREATED).build();
+    }
+
+    private Response generateResponse(FormDataRegister formData) throws JsonProcessingException {
+        var putS3Response = s3.putObject(
                 buildPutRequest(formData),
                 RequestBody.fromFile(uploadToTemp(formData.getData()))
         );
-        PutItemResponse putDbResponse = dynamoDB.putItem( putRequest(formData));
-        SendMessageResponse sendResponse = sqs.sendMessage(buildSendMessage(formData));
+        var putDbResponse = dynamoDB.putItem(putRequest(formData));
+        var sendResponse = sqs.sendMessage(buildSendMessage(formData));
 
         if (putS3Response != null && putDbResponse != null && sendResponse != null) {
-            return Response.ok(formData.getId())
-                    .status(Response.Status.CREATED).build();
+            var response = new ResponseData();
+            response.setId(formData.getId());
+            return Response.ok(response).status(Response.Status.CREATED).build();
         } else {
             return Response.serverError().build();
         }

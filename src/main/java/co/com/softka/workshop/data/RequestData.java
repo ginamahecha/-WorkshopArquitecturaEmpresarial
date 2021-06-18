@@ -4,7 +4,7 @@ package co.com.softka.workshop.data;
 public class RequestData {
 
     private String url;
-    private String type;
+    private String selector;
     private String name;
 
     public String getUrl() {
@@ -15,12 +15,12 @@ public class RequestData {
         this.url = url;
     }
 
-    public String getType() {
-        return type;
+    public String getSelector() {
+        return selector;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setSelector(String selector) {
+        this.selector = selector;
     }
 
     public String getName() {

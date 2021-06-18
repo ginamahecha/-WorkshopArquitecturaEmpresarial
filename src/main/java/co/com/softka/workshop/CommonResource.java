@@ -1,12 +1,11 @@
 package co.com.softka.workshop;
 
-import co.com.softka.workshop.data.FormData;
+import co.com.softka.workshop.data.FormDataRegister;
 import co.com.softka.workshop.event.DomainEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
@@ -16,14 +15,11 @@ import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import static co.com.softka.workshop.Constants.*;
 import static co.com.softka.workshop.event.DomainEvent.DOMAIN_EVENT_WRITER;
 
 
 public abstract class CommonResource {
-
-    public static final  String DOCUMENT_KEY_COL = "documentKey";
-    public static final  String DOCUMENT_STATUS_COL = "documentStatus";
-    public static final  String DOCUMENT_URL_COL = "documentURL";
 
     @ConfigProperty(name = "bucket.name")
     private String bucketName;
@@ -34,33 +30,45 @@ public abstract class CommonResource {
     @ConfigProperty(name = "queue.url")
     private String queueUrl;
 
-    protected PutObjectRequest buildPutRequest(FormData formData) {
+    protected PutObjectRequest buildPutRequest(FormDataRegister formDataRegister) {
         return PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(formData.getId())
-                .contentType(formData.getMimeType())
+                .key(formDataRegister.getId())
+                .contentType(formDataRegister.getMimeType())
                 .build();
     }
 
-    protected SendMessageRequest buildSendMessage(FormData formData) throws JsonProcessingException {
-         String message = DOMAIN_EVENT_WRITER.writeValueAsString(new DomainEvent(
-                 formData.getId(),
-                 formData.getUrl()
-         ));
-         return SendMessageRequest
-                 .builder()
-                 .messageBody(message)
-                 .queueUrl(queueUrl)
+    protected SendMessageRequest buildSendMessage(FormDataRegister formDataRegister) throws JsonProcessingException {
+        String message = DOMAIN_EVENT_WRITER.writeValueAsString(new DomainEvent(
+                formDataRegister.getId(),
+                formDataRegister.getUrl(),
+                formDataRegister.getSelector()
+        ));
+        return SendMessageRequest
+                .builder()
+                .messageBody(message)
+                .queueUrl(queueUrl)
                 // .delaySeconds(5)
-                 .build();
+                .build();
     }
 
+    protected GetItemRequest getRequest(String id) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put(DOCUMENT_KEY_COL, AttributeValue.builder().s(id).build());
 
-    protected PutItemRequest putRequest(FormData formData) {
+        return GetItemRequest.builder()
+                .tableName(tablaName)
+                .key(key)
+                .attributesToGet(DOCUMENT_KEY_COL, DOCUMENT_STATUS_COL, DOCUMENT_URL_COL, DOCUMENT_METADATA_COL)
+                .build();
+    }
+
+    protected PutItemRequest putRequest(FormDataRegister formDataRegister) {
         Map<String, AttributeValue> item = new HashMap<>();
-        item.put(DOCUMENT_KEY_COL, AttributeValue.builder().s(formData.getId()).build());
+        item.put(DOCUMENT_KEY_COL, AttributeValue.builder().s(formDataRegister.getId()).build());
         item.put(DOCUMENT_STATUS_COL, AttributeValue.builder().s("IN_PROGRESS").build());
-        item.put(DOCUMENT_URL_COL, AttributeValue.builder().s(formData.getUrl()).build());
+        item.put(DOCUMENT_URL_COL, AttributeValue.builder().s(formDataRegister.getUrl()).build());
+        item.put(DOCUMENT_METADATA_COL, AttributeValue.builder().s("").build());
         return PutItemRequest.builder()
                 .tableName(tablaName)
                 .item(item)
