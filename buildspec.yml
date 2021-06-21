@@ -9,10 +9,10 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker build -f src/main/docker/Dockerfile.jvm -t quickstart:latest .
-      - docker tag quickstart:latest 013422565856.dkr.ecr.us-east-1.amazonaws.com/quickstart:latest
+      - docker build -f src/main/docker/Dockerfile.jvm -t workshop-quickstart:latest .
+      - docker tag workshop-quickstart:latest 013422565856.dkr.ecr.us-east-1.amazonaws.com/workshop-quickstart:latest
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push 013422565856.dkr.ecr.us-east-1.amazonaws.com/quickstart:latest
+      - docker push 013422565856.dkr.ecr.us-east-1.amazonaws.com/workshop-quickstart:latest
