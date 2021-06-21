@@ -9,6 +9,7 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
+      - ./mvnw package
       - docker build -t workshop-quickstart:latest .
       - docker tag workshop-quickstart:latest 013422565856.dkr.ecr.us-east-1.amazonaws.com/workshop-quickstart:latest
   post_build:
