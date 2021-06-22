@@ -20,3 +20,7 @@ phases:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
       - docker push 013422565856.dkr.ecr.us-east-1.amazonaws.com/workshop-quickstart:latest
+      - echo Writing image definitions file...
+      - printf '[{"name":"workshop-quickstart","imageUri":"%s"}]' 13422565856.dkr.ecr.us-east-1.amazonaws.com/workshop-quickstart:latest > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json

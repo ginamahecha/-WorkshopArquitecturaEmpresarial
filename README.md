@@ -67,3 +67,7 @@ This example demonstrate RESTEasy JSON serialisation by letting you list, add an
 
 docker build -f src/main/docker/Dockerfile.jvm -t workshop-quickstart .
 
+
+
+
+eb init -p docker workshop-quickstar-test --profile training

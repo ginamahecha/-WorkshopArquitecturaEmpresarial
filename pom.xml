@@ -87,6 +87,10 @@
       <version>20200518</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-health</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -152,43 +156,6 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <!-- https://coderplus.github.io/copy-rename-maven-plugin/usage.html -->
-            <groupId>com.coderplus.maven.plugins</groupId>
-            <artifactId>copy-rename-maven-plugin</artifactId>
-            <version>1.0</version>
-            <executions>
-              <execution>
-                <id>copy-eb-files</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>copy</goal>
-                </goals>
-                <configuration>
-                  <fileSets>
-                    <fileSet>
-                      <sourceFile>src/main/resources/application.properties</sourceFile>
-                      <destinationFile>target/eb/application.properties</destinationFile>
-                    </fileSet>
-                    <fileSet>
-                      <sourceFile>src/main/docker/Dockerfile.eb</sourceFile>
-                      <destinationFile>target/eb/Dockerfile</destinationFile>
-                    </fileSet>
-                  </fileSets>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <!-- http://maven.apache.org/plugins/maven-assembly-plugin/usage.html -->
-            <artifactId>maven-assembly-plugin</artifactId>
-            <version>3.2.0</version>
-            <configuration>
-              <descriptors>
-                <descriptor>src/assembly/eb.xml</descriptor>
-              </descriptors>
-            </configuration>
           </plugin>
         </plugins>
       </build>

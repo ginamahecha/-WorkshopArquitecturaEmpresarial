@@ -1,4 +1,4 @@
-*
-!target/*-runner
-!target/*-runner.jar
-!target/lib/*
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+.git
+.gitignore
