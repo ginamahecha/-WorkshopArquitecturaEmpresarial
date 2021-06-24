@@ -21,7 +21,7 @@ phases:
       - echo Pushing the Docker image...
       - docker push 013422565856.dkr.ecr.us-east-1.amazonaws.com/workshop-quickstart:latest
       - echo Writing image definitions file...
-      - printf '[{"name":"cicd-container","imageUri":"%s"}]' 013422565856.dkr.ecr.us-east-1.amazonaws.com/workshop-quickstart:latest > imagedefinitions.json
+      - printf '[{"name":"demo","imageUri":"%s"}]' 013422565856.dkr.ecr.us-east-1.amazonaws.com/workshop-quickstart:latest > imagedefinitions.json
       - cat imagedefinitions.json
 artifacts:
   files: imagedefinitions.json
