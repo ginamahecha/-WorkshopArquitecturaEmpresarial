@@ -28,7 +28,10 @@ public class ReceiverEvent extends CommonReceiverEvent {
     public void listener() {
         sqs.receiveMessage(builderConsumer()).messages()
                 .stream()
-                .peek(message -> sqs.deleteMessage(buildRequestDelete(message)))
+                .peek(message -> {
+                    System.out.println("delete message");
+                    sqs.deleteMessage(buildRequestDelete(message));
+                })
                 .map(Message::body)
                 .map(this::toDomainEvent)
                 .collect(Collectors.toList())
@@ -50,6 +53,7 @@ public class ReceiverEvent extends CommonReceiverEvent {
 
                     //7. Cambiar el estado o actualizar los datos de ese registro de la tabla
                     dynamoDB.putItem(putRequest(dataUpdated));
+                    System.out.println("selected html =>"+metadata.html());
                 });
     }
 }
