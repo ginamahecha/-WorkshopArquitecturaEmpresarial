@@ -34,10 +34,12 @@ public class ReceiverEvent extends CommonReceiverEvent {
                 .collect(Collectors.toList())
                 .forEach((DomainEvent event) -> {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    //5. Obtener el objeto del bucket, por medio del id
                     s3.getObject(
                             buildGetRequest(event.getId()),
                             ResponseTransformer.toOutputStream(baos)
                     );
+                    //6. Processo de scraping
                     var html = baos.toString();
                     var metadata = Jsoup.parse(html)
                             .body()
@@ -45,6 +47,8 @@ public class ReceiverEvent extends CommonReceiverEvent {
                     var dataUpdated = new FormDataUpdate();
                     dataUpdated.setId(event.getId());
                     dataUpdated.setHtml(metadata.html());
+
+                    //7. Cambiar el estado o actualizar los datos de ese registro de la tabla
                     dynamoDB.putItem(putRequest(dataUpdated));
                 });
     }

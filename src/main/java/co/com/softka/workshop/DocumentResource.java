@@ -31,6 +31,7 @@ public class DocumentResource extends CommonResource {
     @Inject
     private SqsClient sqs;
 
+
     @POST
     @Path("extract")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -62,16 +63,20 @@ public class DocumentResource extends CommonResource {
     }
 
     private Response generateResponse(FormDataRegister formData) throws JsonProcessingException {
+        //1. Guardar en el bucket
         var putS3Response = s3.putObject(
                 buildPutRequest(formData),
                 RequestBody.fromFile(uploadToTemp(formData.getData()))
         );
+        //2. Guarda los estados en base de datos
         var putDbResponse = dynamoDB.putItem(putRequest(formData));
+
+        //3. Enviar un mensaje a la cola
         var sendResponse = sqs.sendMessage(buildSendMessage(formData));
 
         if (putS3Response != null && putDbResponse != null && sendResponse != null) {
             var response = new ResponseData();
-            response.setId(formData.getId());
+            response.setId(formData.getId());//4. Responder el id
             return Response.ok(response).status(Response.Status.CREATED).build();
         } else {
             return Response.serverError().build();
